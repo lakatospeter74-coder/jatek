@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#111827" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icon-192.png" />
-<title>Az elveszett korona – Ausztria-kaland 2026 v3</title>
+<title>Az elveszett korona – Ausztria-kaland 2026 v3.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#0b1020;--card:#141b2d;--muted:#9ca3af;--text:#f9fafb;--accent:#f59e0b;--accent2:#22c55e;--danger:#ef4444;--line:#27324a}
@@ -17,7 +17,7 @@
 <div class="wrap">
 <section id="home" class="page">
   <div class="hero">
-    <div class="badge">🏰 Személyre szabott családi kaland · v3</div>
+    <div class="badge">🏰 Személyre szabott családi kaland · v3.1</div>
     <h1>Az elveszett korona</h1>
     <p>Ausztria-kaland Péternek, Bátornak és Bátor barátnőjének — Graz, Leoben, Klagenfurt és a Wörthi-tó.</p>
   </div>
@@ -174,6 +174,17 @@ const GEO={
 'worthersee':[46.6160,14.2620,1200],
 'pyramidenkogel':[46.6095,14.1469,700]
 };
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(page=>page.classList.add('hidden'));
+  const target=document.getElementById(id);
+  if(target)target.classList.remove('hidden');
+  document.querySelectorAll('.tabs button').forEach(button=>button.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(id==='missions')renderMissions();
+  if(id==='album')renderAlbum();
+  if(id==='sync')makeSyncCode(false);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function persist(){localStorage.setItem('austriaAdventureState',JSON.stringify(state));}
 function save(){persist();refresh();}
 function load(){const s=localStorage.getItem('austriaAdventureState');if(s){try{state=Object.assign(state,JSON.parse(s));}catch(e){}}state.surprisePhotos=state.surprisePhotos||{};state.surprises=state.surprises||[];state.finaleUnlocked=state.finaleUnlocked||state.crowns>=CROWN_REQUIRED;if(state.started){document.getElementById('setupCard').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');scheduleSurprise();}refresh();}
