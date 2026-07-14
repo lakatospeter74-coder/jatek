@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#111827" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icon-192.png" />
-<title>Az elveszett korona – Ausztria-kaland 2026</title>
+<title>Az elveszett korona – Ausztria-kaland 2026 v3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#0b1020;--card:#141b2d;--muted:#9ca3af;--text:#f9fafb;--accent:#f59e0b;--accent2:#22c55e;--danger:#ef4444;--line:#27324a}
@@ -17,7 +17,7 @@
 <div class="wrap">
 <section id="home" class="page">
   <div class="hero">
-    <div class="badge">🏰 Személyre szabott családi kaland</div>
+    <div class="badge">🏰 Személyre szabott családi kaland · v3</div>
     <h1>Az elveszett korona</h1>
     <p>Ausztria-kaland Péternek, Bátornak és Bátor barátnőjének — Graz, Leoben, Klagenfurt és a Wörthi-tó.</p>
   </div>
@@ -32,7 +32,7 @@
   <div id="dashboard" class="hidden">
     <div class="card grid">
       <div class="stat"><span>Saját pont</span><b id="scoreNow">0</b></div>
-      <div class="stat"><span>Koronadarab</span><b id="crownNow">0/8</b></div>
+      <div class="stat"><span>Koronadarab</span><b id="crownNow">0/8 szükséges</b></div>
       <div class="stat"><span>Fotók</span><b id="photoNow">0</b></div>
       <div class="stat"><span>Küldetések</span><b id="missionNow">0</b></div>
     </div>
@@ -74,19 +74,89 @@ const MISSIONS=[
 {id:'pyramidenkogel',area:'Wörthi-tó',title:'A torony ítélete',place:'Pyramidenkogel',points:140,crown:1,story:'A legmagasabb ponton az őrzők nem tudást kérnek, hanem választást.',question:'Mindenki válasszon egy irányt a panorámában, és mondja el, miért arra indulna tovább egy képzeletbeli következő kalandban.',answers:['szabad'],photo:'Készítsenek „három irány, egy csapat” panorámaképet. Mindhárman másfelé mutassanak, de valamilyen módon kapcsolódjanak egymáshoz.',tip:'A kilátó és a csúszda használatánál kövessék a helyszíni szabályokat.'},
 {id:'finale',area:'Hazautazás',title:'Az időkapszula',place:'Hazafelé, biztonságos megállóban vagy otthon',points:150,crown:0,story:'A korona összeállt. Az utolsó küldetés nem Graznak vagy Karintiának szól, hanem a jövőbeli önmaguknak.',question:'Mindenki írjon egy rövid, személyes üzenetet: „Ebből az útból azt szeretném megőrizni, hogy…”',answers:['szabad'],photo:'Válasszák ki vagy készítsék el az út záróképét. Ne a legszebb legyen, hanem az, amelyik a legjobban kifejezi a közös élményt.',tip:'Az album exportálásával az üzenetek és képek együtt maradnak.'}
 ];
+const CROWN_MISSIONS=new Set([
+'travel','graz-jakomini','graz-landhaus','graz-stairs','graz-glock','graz-haupt',
+'graz-murinsel','graz-kunsthaus','graz-schlossberg','leoben-tower','leoben-match',
+'klagenfurt-lindwurm','klagenfurt-city','minimundus','worthersee','pyramidenkogel'
+]);
+const CROWN_REQUIRED=8;
+
+const PLAYER_VARIANTS={
+'travel':{
+ peter:{question:'Adjon a háromtagú társaságnak olyan csapatnevet, amely egy régi kalandregény címében is szerepelhetne.',photo:'Fotózza le Bátorékat az autó mellett úgy, mintha ők tudnák az út titkos célját, Ön pedig csak most jött volna rá.'},
+ bator:{question:'Találjatok ki egy csapatnevet, amelyben szerepeljen egy állat vagy egy rejtélyes tárgy.',photo:'Fotózzátok le Pétert úgy, mintha ő lenne a túl komoly expedícióvezető, ti pedig valamit titkolnátok előle.'}},
+'graz-jakomini':{
+ peter:{question:'Keressen a téren egy olyan részletet, amely szerinte Graz nyüzsgését jelképezi. Írja le egy mondatban.',photo:'Fotózza le Bátorékat úgy, mintha rossz villamosra készülődnének felszállni, de ezt még nem tudnák.'},
+ bator:{question:'Találjatok egy olyan részletet, amely mozgást vagy utazást jelképez, és adjatok neki vicces fedőnevet.',photo:'Fotózzátok le Pétert úgy, mintha mindenki másnál biztosabban tudná az irányt, miközben valójában tanácstalan.'}},
+'graz-landhaus':{
+ peter:{question:'Válasszon ki egy címert vagy díszítőelemet, és találja ki, milyen tulajdonságot jelképezhetett.',photo:'Fotózza le Bátorékat úgy, mintha titkos tárgyalást folytatnának a reneszánsz udvarban.'},
+ bator:{question:'Keressetek három különböző formájú díszítőelemet. Melyik lenne a legjobb videojáték-jelvény?',photo:'Fotózzátok le Pétert úgy, mintha ő lenne az udvar szigorú őre, akit megpróbáltok kijátszani.'}},
+'graz-stairs':{
+ peter:{question:'Figyelje meg, hol találkozik először a két lépcsőág. Mitől különleges ez a pont?',photo:'Bátorék legyenek a két lépcsőág „szökevényei”, Ön pedig alulról próbálja szemmel tartani őket.'},
+ bator:{question:'Induljatok külön lépcsőágon, de maradjatok látótávolságban. Hány találkozási pontot fedeztek fel?',photo:'Fotózzátok le Pétert úgy, mintha két külön út között képtelen lenne választani.'}},
+'graz-glock':{
+ peter:{question:'Keressen az épületen egy részletet, amely előre jelzi, hogy itt valami mozogni vagy zenélni fog.',photo:'Bátorék álljanak megdermedt táncosként, Ön pedig legyen a karmester, aki túl későn állította le a zenét.'},
+ bator:{question:'Melyik épületrész kelhet életre a harangjáték idején? Írjátok le saját szavaitokkal.',photo:'Fotózzátok le Pétert úgy, mintha egy láthatatlan zenekart vezényelne, ti pedig nem hinnétek neki.'}},
+'graz-haupt':{
+ peter:{question:'Válasszon egy szobrot vagy homlokzati alakot, és találjon ki róla egy hihető, majd váratlanul abszurd legendát.',photo:'Bátorék utánozzák a kiválasztott alakot; Ön legyen a műkritikus, aki szemmel láthatóan nincs meggyőzve.'},
+ bator:{question:'Válasszatok egy alakot a téren, és adjatok neki modern foglalkozást.',photo:'Fotózzátok le Pétert úgy, mintha a kiválasztott szobor éppen számon kérné rajta a város megmentését.'}},
+'graz-murinsel':{
+ peter:{question:'Döntse el: a Murinsel inkább híd, épület vagy szobor? Egyetlen erős érvvel indokolja.',photo:'Fotózza le Bátorékat úgy, mintha a Murinsel egy elfogott űrhajó lenne, amelyet éppen vizsgálnak.'},
+ bator:{question:'Adjatok a Murinselnek új nevet és képzeljetek hozzá egy titkos funkciót.',photo:'Fotózzátok le Pétert úgy, mintha a Murinsel lenne az óriási kalapja vagy a saját titkos hajója.'}},
+'graz-kunsthaus':{
+ peter:{question:'Adjon az épületnek olyan új nevet, amely egyszerre hangzik tudományosan és nevetségesen.',photo:'Bátorék legyenek a frissen érkezett idegenek, Ön pedig a túlzottan udvarias földi fogadóbizottság.'},
+ bator:{question:'Találjatok ki három dolgot, amire az épület alakja emlékeztet.',photo:'Fotózzátok le Pétert úgy, mintha az épület őt választotta volna földi nagykövetének.'}},
+'graz-schlossberg':{
+ peter:{question:'Melyik grazi pillanatot szeretné leginkább öt év múlva felidézni, és miért?',photo:'Fotózza le Bátorékat az Uhrturmmal úgy, mintha ők próbálnák visszatartani az idő múlását.'},
+ bator:{question:'Melyik volt a legviccesebb vagy legváratlanabb pillanat Grazban?',photo:'Fotózzátok le Pétert úgy, mintha az Uhrturm óráját személyesen neki kellene beállítania.'}},
+'leoben-tower':{
+ peter:{question:'Találjon ki magának középkori leobeni álnevet és rangot.',photo:'Bátorék legyenek a városkapunál gyanús utazók, Ön pedig a túl szigorú kapuőr.'},
+ bator:{question:'Találjatok ki Péternek egy középkori álnevet, amelyet nem sértő, de vicces kimondani.',photo:'Fotózzátok le Pétert úgy, mintha ő próbálna titokban bejutni, ti pedig már lelepleztétek.'}},
+'leoben-match':{
+ peter:{question:'Tippelje meg az első gólt szerző csapatot és a végeredményt. A meccs után rögzítse, mennyire járt közel.',photo:'Fotózza le Bátorékat két teljesen eltérő szurkolói reakcióval: egyikük biztos a győzelemben, másikuk már aggódik.'},
+ bator:{question:'Tippeljétek meg, melyik félidőben lesz több gól, és ki lesz a meccs legfeltűnőbb játékosa.',photo:'Fotózzátok le Pétert úgy, mintha ő lenne az edző, akinek azonnal taktikai változtatást kell elrendelnie.'}},
+'klagenfurt-lindwurm':{
+ peter:{question:'Találjon ki egy mondatot arról, milyen feltétellel adná át a sárkány a koronatöredéket.',photo:'Bátorék próbálják megszelídíteni a sárkányt, Ön pedig úgy reagáljon, mintha ez nyilvánvalóan rossz ötlet volna.'},
+ bator:{question:'Találjatok ki hárommondatos történetet arról, miért költözött a sárkány éppen Klagenfurtba.',photo:'Fotózzátok le Pétert úgy, mintha a sárkány régi ismerőse volna, akivel komoly vitája van.'}},
+'klagenfurt-city':{
+ peter:{question:'Keressen egy udvart vagy átjárót, és adjon neki filmcímet.',photo:'Bátorék legyenek a gyanús mellékszereplők, Ön pedig a nyomozó, aki már mindent tud.'},
+ bator:{question:'Keressetek két eltérő hangulatú udvart vagy átjárót, és adjatok nekik egy-egy zeneműcímet.',photo:'Fotózzátok le Pétert úgy, mintha ő lenne a történet főgonosza, akit éppen rajtakaptatok.'}},
+'minimundus':{
+ peter:{question:'Válasszon egy modellt, amelyhez a fiatalokat szívesen elvinné egyszer, és mondja el miért.',photo:'Fotózza le Bátorékat úgy, mintha óriásokként éppen megmentenének egy miniatűr épületet.'},
+ bator:{question:'Válasszatok egy modellt, ahová Pétert szerintetek mindenképpen el kellene vinni.',photo:'Fotózzátok le Pétert úgy, mintha óriásként véletlenül túl közel került volna egy híres épülethez.'}},
+'worthersee':{
+ peter:{question:'Keressen egy természetes és egy mesterséges tükröződést. Melyik hat érdekesebben?',photo:'Bátorék szerepeljenek csak tükröződésként vagy sziluettként, Ön pedig maradjon a képen kívüli rendező.'},
+ bator:{question:'Találjatok olyan tükröződést, amelyben Péter felismerhető, de nem látszik közvetlenül.',photo:'Fotózzátok le Pétert úgy, hogy a víz vagy a tükröződés fontosabb legyen nála.'}},
+'pyramidenkogel':{
+ peter:{question:'Válasszon egy irányt a panorámában egy következő közös utazáshoz, és indokolja.',photo:'Bátorék mutassanak két külön irányba, Ön pedig álljon úgy, mintha lehetetlen volna döntenie közöttük.'},
+ bator:{question:'Válasszatok két teljesen eltérő irányt, és találjátok ki, milyen kaland várna ott.',photo:'Fotózzátok le Pétert úgy, mintha ő lenne az expedíció vezetője, de ti titokban más irányt választottatok.'}},
+'finale':{
+ peter:{question:'Írja le: „Ebből az útból azt szeretném megőrizni, hogy…”',photo:'Válassza ki vagy készítse el azt a záróképet, amely Ön szerint legjobban mutatja Bátorék közös örömét.'},
+ bator:{question:'Írjátok le: „Ebből az útból azt szeretnénk megőrizni, hogy…”',photo:'Válasszátok ki vagy készítsétek el azt a záróképet, amelyen Péter a leginkább önmaga.'}}
+};
+function playerVariant(m,field){
+ const role=state.player==='bator'?'bator':'peter';
+ return (PLAYER_VARIANTS[m.id]&&PLAYER_VARIANTS[m.id][role]&&PLAYER_VARIANTS[m.id][role][field])||m[field];
+}
+function givesCrown(m){return CROWN_MISSIONS.has(m.id)&&m.id!=='finale';}
 const SURPRISES=[
-{title:'Titkos megfigyelés',text:'A következő 8 percben figyelje meg, ki mondja ki először: „merre menjünk?”. A nyertes +20 pontot kap.',pts:20},
-{title:'A túl komoly játékos',text:'A következő közös képen mindhárman más érzelmet mutassanak: döbbenet, gyanakvás, túlzott büszkeség.',pts:25},
-{title:'Német nyelvi kulcs',text:'Péter kérdezzen meg udvariasan egy helyitől valami egyszerűt németül. Bátor foglalja össze magyarul a választ. +35 pont.',pts:35},
-{title:'Csendes összeesküvés',text:'Két játékos próbálja elérni, hogy a harmadik 5 percen belül kimondja: „Ez tényleg szép.” Nem mondhatják el, miért.',pts:30},
-{title:'Váratlan fotóparancs',text:'60 másodpercük van olyan fotót készíteni, amelyen csak árnyékok vagy tükröződések szerepelnek.',pts:30},
-{title:'Játékmesteri adó',text:'A csapat túl jól halad. Válasszanak: -15 pont, vagy mondjon mindenki egy kínos, de ártalmatlan utazási történetet.',pts:0},
-{title:'Koronabónusz',text:'Az első játékos, aki észrevesz egy állatábrázolást az épített környezetben, +20 pontot kap.',pts:20},
-{title:'Hamis riasztás',text:'Sürgős küldetés érkezett… Nem. A játékmester csak ellenőrizte, figyelnek-e. Jutalmuk +5 pont.',pts:5},
-{title:'Iránycsere',text:'A következő útelágazásnál Bátorék javasoljanak irányt, Péter csak biztonsági vagy gyakorlati okból vétózhat.',pts:20},
-{title:'Az emlékező perc',text:'Telefonok le 3 percre. Mindenki keressen egy apró részletet, amit később el tud mesélni. Utána rögzítsék egy mondatban.',pts:25}
-];
-let state={started:false,player:'peter',name:'Péter',gameCode:'KORONA26',score:0,crowns:0,done:{},answers:{},photos:{},notes:{},surprises:[],startedAt:null,nextSurprise:null,firstSurpriseSent:false,lastPosition:null,nearbyNotified:{}};
+{id:'peter-word',roles:['peter'],areas:['*'],title:'Titkos szócsapda',text:'Öt percen belül érje el, hogy Bátor kimondja: „Miért?”. Nem mondhatja el, hogy küldetést kapott.',pts:30,photo:false},
+{id:'bator-agent',roles:['bator'],areas:['*'],title:'Titkos megfigyelés',text:'Fotózzátok le Pétert úgy, mintha titkosügynök lenne, de a kép elkészítéséig ne áruljátok el neki a szerepét.',pts:35,photo:true},
+{id:'peter-german',roles:['peter'],areas:['Graz','Leoben','Klagenfurt','Wörthi-tó'],title:'Német nyelvi kulcs',text:'Kérdezzen meg udvariasan egy helyitől valami egyszerűt németül, majd mondja el Bátoréknak a válasz lényegét.',pts:35,photo:false},
+{id:'bator-beautiful',roles:['bator'],areas:['*'],title:'Csendes összeesküvés',text:'Öt percen belül érjétek el, hogy Péter magától kimondja: „Ez tényleg szép.”',pts:30,photo:false},
+{id:'peter-director',roles:['peter'],areas:['Graz','Klagenfurt'],title:'Rendezői parancs',text:'A következő fotón Bátorék két különböző érzelmet mutassanak. Csak a beállítás végén mondja el nekik, melyiket.',pts:30,photo:true},
+{id:'bator-statue',roles:['bator'],areas:['Graz','Klagenfurt','Leoben'],title:'Élő szobor',text:'Keressetek egy szobrot vagy homlokzati alakot, és fotózzátok le Pétert úgy, mintha titokban utánozná.',pts:30,photo:true},
+{id:'peter-animal',roles:['peter'],areas:['Graz','Klagenfurt','Leoben'],title:'Állati nyom',text:'Keressen állatábrázolást az épített környezetben. Bátorék csak akkor láthatják, amikor már elkészült a bizonyító fotó.',pts:25,photo:true},
+{id:'bator-question',roles:['bator'],areas:['*'],title:'A kíváncsi őrzők',text:'Próbáljátok meg rávenni Pétert, hogy öt percen belül legalább három kérdést tegyen fel ugyanarról a dologról.',pts:25,photo:false},
+{id:'both-shadows',roles:['peter','bator','shared'],areas:['*'],title:'Váratlan fotóparancs',text:'Két percük van olyan képet készíteni, amelyen csak árnyék, tükröződés vagy sziluett meséli el, hogy együtt vannak.',pts:30,photo:true},
+{id:'both-memory',roles:['peter','bator','shared'],areas:['*'],title:'Az emlékező perc',text:'Telefonok le három percre. Mindenki keressen egy apró részletet, amelyet este is fel tud idézni.',pts:25,photo:false},
+{id:'match-peter',roles:['peter'],areas:['Leoben'],title:'Edzői döntés',text:'A következő öt percben figyeljen meg egy taktikai részletet, majd magyarázza el Bátornak egy mondatban.',pts:30,photo:false},
+{id:'match-bator',roles:['bator'],areas:['Leoben'],title:'Kommentátori próba',text:'Válasszatok egy jelenetet, és a szünetben adjatok hozzá húsz másodperces, túlzó sportkommentárt.',pts:30,photo:false},
+{id:'lake-peter',roles:['peter'],areas:['Wörthi-tó'],title:'A víz őre',text:'Készítsen képet Bátorékról úgy, hogy csak a tükröződésük vagy árnyékuk legyen felismerhető.',pts:35,photo:true},
+{id:'lake-bator',roles:['bator'],areas:['Wörthi-tó'],title:'Fordított világ',text:'Fotózzátok le Pétert úgy, mintha a vízben lévő világ lenne a valódi, ő pedig csak a tükröződés.',pts:35,photo:true},
+{id:'false-alarm',roles:['peter','bator','shared'],areas:['*'],title:'Hamis riasztás',text:'A Játékmester csak ellenőrizte, figyelnek-e. Nincs feladat, de a figyelemért jár 5 pont.',pts:5,photo:false,auto:true}
+]
+let state={started:false,player:'peter',name:'Péter',gameCode:'KORONA26',score:0,crowns:0,done:{},answers:{},photos:{},notes:{},surprises:[],activeSurprise:null,surprisePhotos:{},startedAt:null,nextSurprise:null,firstSurpriseSent:false,lastPosition:null,nearbyNotified:{}};
 let gpsWatch=null;
 const GEO={
 'graz-jakomini':[47.0674,15.4420,300],
@@ -106,7 +176,7 @@ const GEO={
 };
 function persist(){localStorage.setItem('austriaAdventureState',JSON.stringify(state));}
 function save(){persist();refresh();}
-function load(){const s=localStorage.getItem('austriaAdventureState');if(s){try{state=Object.assign(state,JSON.parse(s));}catch(e){}}if(state.started){document.getElementById('setupCard').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');scheduleSurprise();}refresh();}
+function load(){const s=localStorage.getItem('austriaAdventureState');if(s){try{state=Object.assign(state,JSON.parse(s));}catch(e){}}state.surprisePhotos=state.surprisePhotos||{};state.surprises=state.surprises||[];state.finaleUnlocked=state.finaleUnlocked||state.crowns>=CROWN_REQUIRED;if(state.started){document.getElementById('setupCard').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');scheduleSurprise();}refresh();}
 function saveDraft(id){const a=document.getElementById('ans_'+id),n=document.getElementById('note_'+id);if(a)state.answers[id]=a.value;if(n)state.notes[id]=n.value;persist();}
 function preserveMissionDraft(id){saveDraft(id);}
 function startGame(){state.started=true;state.player=document.getElementById('playerSelect').value;state.name=document.getElementById('playerName').value.trim()||'Játékos';state.gameCode=document.getElementById('gameCode').value.trim()||'KORONA26';state.startedAt=state.startedAt||new Date().toISOString();document.getElementById('setupCard').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');save();scheduleSurprise(true);toast('A kaland elkezdődött','Az első titkos jel már úton van…');}
@@ -116,29 +186,114 @@ function missionDistance(m){if(!state.lastPosition||!GEO[m.id])return null;const
 function fmtDistance(d){if(d==null)return '';return d<1000?Math.round(d)+' m':(d/1000).toFixed(d<10000?1:0)+' km';}
 function incompleteMissions(){return MISSIONS.filter(m=>!state.done[m.id]);}
 function nearestMission(){const withGps=incompleteMissions().map(m=>({m,d:missionDistance(m)})).filter(x=>x.d!=null).sort((a,b)=>a.d-b.d);return withGps[0]?.m||incompleteMissions()[0]||MISSIONS[MISSIONS.length-1];}
-function refresh(){document.getElementById('scoreNow').textContent=state.score;document.getElementById('crownNow').textContent=state.crowns+'/8';document.getElementById('photoNow').textContent=Object.keys(state.photos||{}).length;document.getElementById('missionNow').textContent=Object.keys(state.done||{}).length;renderMissions();renderAlbum();makeSyncCode(false);const m=nearestMission();const d=missionDistance(m);document.getElementById('nextMission').innerHTML=`<div class="mission"><span class="pill">${d!=null?'legközelebb':'javasolt'}</span><span class="pill">${m.area}</span><h3>${m.title}</h3><div>${m.place}</div>${d!=null?`<div class="distance">${fmtDistance(d)} távolságra</div>`:''}<div class="small">${m.points} pont · ${m.crown?'koronatöredék':'emlékküldetés'}</div></div>`;updateGPSStatus();}
+function refresh(){document.getElementById('scoreNow').textContent=state.score;document.getElementById('crownNow').textContent=Math.min(state.crowns,CROWN_REQUIRED)+'/'+CROWN_REQUIRED+' szükséges';document.getElementById('photoNow').textContent=Object.keys(state.photos||{}).length;document.getElementById('missionNow').textContent=Object.keys(state.done||{}).length;renderMissions();renderAlbum();makeSyncCode(false);const m=nearestMission();const d=missionDistance(m);document.getElementById('nextMission').innerHTML=`<div class="mission"><span class="pill">${d!=null?'legközelebb':'javasolt'}</span><span class="pill">${m.area}</span><h3>${m.title}</h3><div>${m.place}</div>${d!=null?`<div class="distance">${fmtDistance(d)} távolságra</div>`:''}<div class="small">${m.points} pont · ${givesCrown(m)?'koronatöredék':'emlékküldetés'}</div></div>`;updateGPSStatus();}
 function renderMissions(){const el=document.getElementById('missionList');if(!el)return;let list=[...MISSIONS];if(state.lastPosition){list.sort((a,b)=>{const da=missionDistance(a),db=missionDistance(b);if(da==null&&db==null)return 0;if(da==null)return 1;if(db==null)return-1;return da-db;});}el.innerHTML='<div class="card notice near"><b>Szabad játékmenet:</b> bármelyik küldetés megnyitható. GPS esetén a legközelebbi helyszínek kerülnek előre.</div>'+list.map(m=>{const done=!!state.done[m.id],d=missionDistance(m),near=d!=null&&GEO[m.id]&&d<=GEO[m.id][2];return `<div class="card route-card ${done?'done':''} ${near?'near':''}" onclick="openMission('${m.id}')"><span class="pill">${done?'✓ teljesítve':near?'📍 itt vannak':'nyitott'}</span><span class="pill">${m.area}</span><h3>${m.title}</h3><div>${m.place}</div>${d!=null?`<div class="distance">${fmtDistance(d)}</div>`:''}<div class="small">${m.points} pont ${m.crown?'· 👑':''}</div></div>`;}).join('');}
 function openCurrentMission(){openMission(nearestMission().id)}
 function openNearestMission(){const m=nearestMission();if(m)openMission(m.id)}
 function startGPS(){if(!navigator.geolocation){toast('GPS nem támogatott','Ezen a készüléken a böngésző nem ad helyadatot. A küldetések kézzel továbbra is megnyithatók.');return}if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=navigator.geolocation.watchPosition(pos=>{state.lastPosition={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy,time:Date.now()};persist();checkNearby();refresh();},err=>toast('GPS-hiba',err.message||'A helyzet nem érhető el.'),{enableHighAccuracy:true,maximumAge:15000,timeout:20000});toast('GPS bekapcsolva','A legközelebbi küldetések automatikusan előre kerülnek.');}
 function updateGPSStatus(){const t=document.getElementById('gpsStatus'),dot=document.getElementById('gpsDot');if(!t||!dot)return;if(!state.lastPosition){t.textContent='A helyzet nincs bekapcsolva. A küldetések ettől még kézzel megnyithatók.';dot.classList.remove('on');return}const m=nearestMission(),d=missionDistance(m);dot.classList.add('on');t.textContent=`Helyzet aktív (pontosság: kb. ${Math.round(state.lastPosition.accuracy||0)} m). Legközelebb: ${m.title}${d!=null?' – '+fmtDistance(d):''}.`;}
 function checkNearby(){if(!state.lastPosition)return;for(const m of MISSIONS){if(state.done[m.id]||!GEO[m.id])continue;const d=missionDistance(m),r=GEO[m.id][2];if(d<=r&&!state.nearbyNotified[m.id]){state.nearbyNotified[m.id]=Date.now();persist();toast('📍 Helyszíni küldetés aktiválódott',`${m.title} – ${m.place}. Már csak ${fmtDistance(d)}.` ,`openMission('${m.id}')`);break;}}}
-function openMission(id){const m=MISSIONS.find(x=>x.id===id);const ans=state.answers[id]||'';const note=state.notes[id]||'';const photo=state.photos[id];document.getElementById('modalHost').innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="box"><div class="emoji">${state.done[id]?'✅':'🗝️'}</div><span class="pill">${m.area}</span><h2>${m.title}</h2><p><b>Helyszín:</b> ${m.place}</p><p>${m.story}</p><div class="card mission"><h3>Feladvány</h3><p>${m.question}</p></div><label>Válasz / közös történet</label><textarea id="ans_${id}" rows="4" oninput="saveDraft('${id}')">${escapeHtml(ans)}</textarea><div class="card"><h3>📸 Fotóküldetés</h3><p>${m.photo}</p><input type="file" accept="image/*" capture="environment" onclick="preserveMissionDraft('${id}')" onchange="photoPicked('${id}',event)">${photo?`<img class="photo" src="${photo}">`:''}</div><label>Megjegyzés az albumhoz</label><textarea id="note_${id}" rows="3" oninput="saveDraft('${id}')">${escapeHtml(note)}</textarea><p class="small">Tipp: ${m.tip}</p><div class="row"><button class="good" onclick="completeMission('${id}')">${state.done[id]?'Frissítés mentése':'Küldetés teljesítése'}</button><button class="secondary" onclick="closeModal()">Bezárás</button></div></div></div>`;}
+function openMission(id){const m=MISSIONS.find(x=>x.id===id);const ans=state.answers[id]||'';const note=state.notes[id]||'';const photo=state.photos[id];document.getElementById('modalHost').innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="box"><div class="emoji">${state.done[id]?'✅':'🗝️'}</div><span class="pill">${m.area}</span><h2>${m.title}</h2><p><b>Helyszín:</b> ${m.place}</p><p>${m.story}</p><div class="card mission"><h3>Feladvány</h3><p>${playerVariant(m,'question')}</p></div><label>Válasz / közös történet</label><textarea id="ans_${id}" rows="4" oninput="saveDraft('${id}')">${escapeHtml(ans)}</textarea><div class="card"><h3>📸 Fotóküldetés</h3><p>${playerVariant(m,'photo')}</p><input type="file" accept="image/*" capture="environment" onclick="preserveMissionDraft('${id}')" onchange="photoPicked('${id}',event)">${photo?`<img class="photo" src="${photo}">`:''}</div><label>Megjegyzés az albumhoz</label><textarea id="note_${id}" rows="3" oninput="saveDraft('${id}')">${escapeHtml(note)}</textarea><p class="small">Tipp: ${m.tip}</p><div class="row"><button class="good" onclick="completeMission('${id}')">${state.done[id]?'Frissítés mentése':'Küldetés teljesítése'}</button><button class="secondary" onclick="closeModal()">Bezárás</button></div></div></div>`;}
 function photoPicked(id,e){saveDraft(id);const f=e.target.files[0];if(!f)return;toast('Fénykép feldolgozása','A kép tömörítése és mentése folyamatban van…');const r=new FileReader();r.onload=()=>{compressImage(r.result,1200,.78).then(data=>{state.photos[id]=data;persist();document.getElementById('toastHost').innerHTML='';refresh();openMission(id);toast('Fénykép elmentve','A kép bekerült az emlékalbumba.');}).catch(()=>toast('Mentési hiba','A fényképet nem sikerült elmenteni. Próbálják meg újra.'));};r.readAsDataURL(f);}
 function compressImage(src,max,q){return new Promise(res=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=Math.min(max/w,max/h);w*=s;h*=s}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',q));};img.src=src;});}
-function completeMission(id){const m=MISSIONS.find(x=>x.id===id);state.answers[id]=document.getElementById('ans_'+id).value.trim();state.notes[id]=document.getElementById('note_'+id).value.trim();if(!state.done[id]){state.done[id]=true;state.score+=m.points;state.crowns+=m.crown||0;toast('Küldetés teljesítve',`+${m.points} pont${m.crown?' és egy koronatöredék':''}`);if(Object.keys(state.done).length%3===0)setTimeout(()=>toast('Titkos cserepont','Most érdemes eredménykódot cserélni a másik telefonnal.'),1200);}save();closeModal();}
+function completeMission(id){
+ const m=MISSIONS.find(x=>x.id===id);
+ state.answers[id]=document.getElementById('ans_'+id).value.trim();
+ state.notes[id]=document.getElementById('note_'+id).value.trim();
+ if(id==='finale'&&state.crowns<CROWN_REQUIRED){
+   toast('A finálé még zárva',`Még ${CROWN_REQUIRED-state.crowns} szabadon választható koronatöredék hiányzik. Nem kell minden helyszínt felkeresni.`);
+   persist(); return;
+ }
+ if(!state.done[id]){
+   state.done[id]=true; state.score+=m.points;
+   if(givesCrown(m))state.crowns+=1;
+   toast('Küldetés teljesítve',`+${m.points} pont${givesCrown(m)?' és egy koronatöredék':''}`);
+   if(state.crowns>=CROWN_REQUIRED&&!state.finaleUnlocked){
+      state.finaleUnlocked=true;
+      setTimeout(()=>toast('👑 A finálé megnyílt','Megszerezték a szükséges 8 töredéket. A többi helyszín továbbra is teljesíthető bónuszként.'),1000);
+   }
+   if(Object.keys(state.done).length%3===0)setTimeout(()=>toast('Titkos cserepont','Most érdemes eredménykódot cserélni a másik telefonnal.'),1600);
+ }
+ save(); closeModal();
+}
 function closeModal(){document.getElementById('modalHost').innerHTML='';}
 function toast(title,text,action){document.getElementById('toastHost').innerHTML=`<div class="toast"><h3>${title}</h3><p>${text}</p><button onclick="document.getElementById('toastHost').innerHTML='';${action||''}">Értettem</button></div>`;}
 function surpriseNow(){triggerSurprise(true)}
-function scheduleSurprise(reset=false){if(!state.started)return;if(state._timer)clearTimeout(state._timer);const now=Date.now();if(reset||!state.nextSurprise){const first=!state.firstSurpriseSent;const min=first?3:12,max=first?8:40;const mins=Math.floor(Math.random()*(max-min+1))+min;state.nextSurprise=now+mins*60000;persist();}const delay=state.nextSurprise-now;if(delay<=0){setTimeout(()=>triggerSurprise(false),800);}else{state._timer=setTimeout(()=>triggerSurprise(false),delay);}}
-function triggerSurprise(manual){const s=SURPRISES[Math.floor(Math.random()*SURPRISES.length)];state.surprises.push({time:new Date().toISOString(),title:s.title,text:s.text,pts:s.pts});state.score+=s.pts||0;state.firstSurpriseSent=true;state.nextSurprise=null;persist();refresh();toast('🔔 '+s.title,s.text);if('Notification'in window&&Notification.permission==='granted'){try{new Notification('Az elveszett korona: '+s.title,{body:s.text,tag:'korona-'+Date.now()});}catch(e){}}scheduleSurprise();}
+function currentArea(){
+ const m=nearestMission();
+ return m&&missionDistance(m)!=null&&missionDistance(m)<1500?m.area:'*';
+}
+function eligibleSurprises(){
+ const role=state.player||'peter',area=currentArea();
+ const used=new Set((state.surprises||[]).slice(-7).map(x=>x.id));
+ let list=SURPRISES.filter(s=>(s.roles.includes(role)||s.roles.includes('shared'))&&(s.areas.includes('*')||s.areas.includes(area))&&!used.has(s.id));
+ if(!list.length)list=SURPRISES.filter(s=>(s.roles.includes(role)||s.roles.includes('shared'))&&(s.areas.includes('*')||s.areas.includes(area)));
+ return list;
+}
+function scheduleSurprise(reset=false){
+ if(!state.started)return;if(state._timer)clearTimeout(state._timer);
+ const now=Date.now();
+ if(reset||!state.nextSurprise){
+   const first=!state.firstSurpriseSent,min=first?2:10,max=first?6:28;
+   const mins=Math.floor(Math.random()*(max-min+1))+min;
+   state.nextSurprise=now+mins*60000;persist();
+ }
+ const delay=state.nextSurprise-now;
+ if(delay<=0)setTimeout(()=>triggerSurprise(false),800);
+ else state._timer=setTimeout(()=>triggerSurprise(false),delay);
+}
+function triggerSurprise(manual){
+ if(state.activeSurprise&&!state.activeSurprise.finished){openSurpriseModal();return}
+ const list=eligibleSurprises(),s=list[Math.floor(Math.random()*list.length)];
+ const item={key:'s'+Date.now(),id:s.id,time:new Date().toISOString(),title:s.title,text:s.text,pts:s.pts,photo:!!s.photo,auto:!!s.auto,finished:false};
+ state.activeSurprise=item;state.firstSurpriseSent=true;state.nextSurprise=null;persist();
+ if('Notification'in window&&Notification.permission==='granted'){try{new Notification('Az elveszett korona: '+s.title,{body:s.text,tag:item.key});}catch(e){}}
+ openSurpriseModal();
+ if(s.auto)setTimeout(()=>finishSurprise(true),600);
+}
+function openSurpriseModal(){
+ const s=state.activeSurprise;if(!s)return;
+ const img=state.surprisePhotos&&state.surprisePhotos[s.key];
+ document.getElementById('modalHost').innerHTML=`<div class="modal"><div class="box"><div class="emoji">🔔</div><span class="pill">Váratlan küldetés</span><h2>${escapeHtml(s.title)}</h2><p>${escapeHtml(s.text)}</p><p class="points">+${s.pts} pont</p>${s.photo?`<div class="card"><h3>📸 Bizonyító fénykép</h3><input type="file" accept="image/*" capture="environment" onchange="surprisePhotoPicked(event)">${img?`<img class="photo" src="${img}">`:''}</div>`:''}<label>Rövid emlék vagy megjegyzés</label><textarea id="surpriseNote" rows="3">${escapeHtml(s.note||'')}</textarea><div class="row"><button class="good" onclick="finishSurprise(true)">Sikerült</button><button class="danger" onclick="finishSurprise(false)">Nem sikerült</button><button class="secondary" onclick="closeModal()">Később</button></div></div></div>`;
+}
+function surprisePhotoPicked(e){
+ const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>compressImage(r.result,1200,.78).then(data=>{state.surprisePhotos=state.surprisePhotos||{};state.surprisePhotos[state.activeSurprise.key]=data;persist();openSurpriseModal();toast('Fénykép elmentve','A váratlan küldetés képe bekerült az albumba.');});
+ r.readAsDataURL(f);
+}
+function finishSurprise(success){
+ const s=state.activeSurprise;if(!s)return;
+ const n=document.getElementById('surpriseNote');s.note=n?n.value.trim():(s.note||'');
+ s.finished=true;s.success=success;
+ if(success){state.score+=s.pts||0;toast('Váratlan küldetés teljesítve',`+${s.pts} pont`);}
+ else toast('Küldetés lezárva','Nem jár pont, de a történet folytatódik.');
+ state.surprises=state.surprises||[];state.surprises.push({...s});
+ state.activeSurprise=null;persist();refresh();closeModal();scheduleSurprise(true);
+}
 async function askNotifications(){if(!('Notification'in window)){toast('Nem támogatott','Ezen a böngészőn nincs webes értesítés. Az alkalmazáson belüli üzenetek működnek.');return}const p=await Notification.requestPermission();toast('Értesítés',p==='granted'?'Engedélyezve. A háttérben való működést a telefon energiatakarékossága korlátozhatja.':'Nem engedélyezett; az alkalmazáson belüli üzenetek továbbra is működnek.');}
 function checksum(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0)}
 function encodeState(){const payload={g:state.gameCode,p:state.player,s:state.score,m:Object.keys(state.done).length,c:state.crowns,t:Date.now()};const raw=JSON.stringify(payload);const n=checksum(raw).toString(36).toUpperCase();return (payload.s.toString(36)+'-'+payload.m.toString(36)+payload.c.toString(36)+'-'+n.slice(0,4)).toUpperCase();}
 function makeSyncCode(show=true){if(!state.started)return;const code=encodeState();const el=document.getElementById('syncCode');if(el)el.textContent=code;const q=document.getElementById('qrcode');if(q){q.innerHTML='';if(window.QRCode){const box=document.createElement('div');box.className='qr';q.appendChild(box);new QRCode(box,{text:`KORONA|${state.gameCode}|${state.player}|${state.score}|${Object.keys(state.done).length}|${state.crowns}`,width:190,height:190});}else q.innerHTML='<p class="small">A QR-kódhoz internet kell a segédkönyvtár betöltésekor. A rövid kód internet nélkül is használható.</p>';}if(show)toast('Kód elkészült','Mutassa meg a másik csapatnak, vagy olvassák be kézzel.');}
 function compareCode(){const val=document.getElementById('otherCode').value.trim().toUpperCase();const m=val.match(/^([0-9A-Z]+)-([0-9A-Z])([0-9A-Z])-([0-9A-Z]{4})$/);const out=document.getElementById('compareResult');if(!m){out.innerHTML='<div class="notice">A kód formátuma nem megfelelő.</div>';return}const otherScore=parseInt(m[1],36),otherM=parseInt(m[2],36),otherC=parseInt(m[3],36);const d=state.score-otherScore;let msg=d===0?'Pontosan döntetlen az állás.':Math.abs(d)<=25?'A különbség legfeljebb 25 pont. A korona sorsa teljesen nyitott.':d>0?'Az Önök telefonján tárolt csapat jelenleg vezet.':'A másik csapat átvette a vezetést.';out.innerHTML=`<div class="card"><h3>Játékmesteri közlemény</h3><p>${msg}</p><p class="small">Másik csapat: ${otherM} küldetés, ${otherC} koronatöredék. A pontos pontszám rejtve marad.</p></div>`;}
-function renderAlbum(){const el=document.getElementById('albumList');if(!el)return;const withContent=MISSIONS.filter(m=>state.photos[m.id]||state.answers[m.id]||state.notes[m.id]||state.done[m.id]);const photos=Object.keys(state.photos||{}).length;const done=Object.keys(state.done||{}).length;const status=document.getElementById('albumStatus');if(status){let approx=0;try{approx=new Blob([JSON.stringify(state)]).size/1024/1024}catch(e){}status.innerHTML=`<h2>Album állapota</h2><div class="grid"><div class="stat"><span>Elmentett képek</span><b>${photos}</b></div><div class="stat"><span>Bejegyzések</span><b>${withContent.length}</b></div><div class="stat"><span>Teljesített</span><b>${done}</b></div><div class="stat"><span>Helyi mentés</span><b>${approx.toFixed(1)} MB</b></div></div><p class="small">A képek ezen a telefonon, a böngésző helyi tárhelyén vannak. Minden sikeres képmentés után „Fénykép elmentve” üzenet jelenik meg. Biztonsági másolatként naponta használják a „Mentés exportálása” gombot.</p>`;}if(!withContent.length){el.innerHTML='<div class="card">Még nincs albumbejegyzés. A válasz gépelése és a fénykép elkészítése közben automatikus helyi mentés történik.</div>';return}el.innerHTML=withContent.map((m,i)=>`<div class="card album-item"><span class="pill">${m.area}</span><span class="pill">${state.done[m.id]?'✓ teljesítve':'piszkozat'}</span><h3>${i+1}. ${m.title}</h3>${state.photos[m.id]?`<img class="photo" src="${state.photos[m.id]}">`:'<p class="small">Még nincs fénykép.</p>'}<p><b>Feladat:</b> ${m.photo}</p><p><b>Válasz:</b> ${escapeHtml(state.answers[m.id]||'—')}</p>${state.notes[m.id]?`<p><b>Emlék:</b> ${escapeHtml(state.notes[m.id])}</p>`:''}<button class="secondary" onclick="openMission('${m.id}')">Bejegyzés megnyitása</button></div>`).join('');}
-function exportAlbum(){const items=MISSIONS.filter(m=>state.done[m.id]).map((m,i)=>`<section><h2>${i+1}. ${m.title}</h2><p><b>${m.area} – ${m.place}</b></p>${state.photos[m.id]?`<img src="${state.photos[m.id]}">`:''}<p><b>Fotóküldetés:</b> ${m.photo}</p><p><b>Válasz:</b> ${escapeHtml(state.answers[m.id]||'')}</p><p><b>Emlék:</b> ${escapeHtml(state.notes[m.id]||'')}</p></section>`).join('');const html=`<!doctype html><meta charset="utf-8"><title>Ausztria-kaland emlékalbum</title><style>body{font-family:Arial;max-width:900px;margin:40px auto;padding:20px;color:#1f2937}h1{font-size:42px}section{page-break-inside:avoid;border-top:2px solid #ddd;padding:25px 0}img{max-width:100%;max-height:650px;border-radius:14px}small{color:#666}</style><h1>Az elveszett korona</h1><p>Ausztria-kaland 2026 · ${escapeHtml(state.name)} · ${state.score} pont · ${state.crowns}/8 koronatöredék</p>${items}<section><h2>Váratlan események</h2>${state.surprises.map(x=>`<p><b>${escapeHtml(x.title)}</b>: ${escapeHtml(x.text)}</p>`).join('')}</section><p><small>Az albumot a családi kalandalkalmazás készítette.</small></p>`;downloadBlob(html,'ausztria-kaland-emlekalbum.html','text/html');}
+function renderAlbum(){
+ const el=document.getElementById('albumList');if(!el)return;
+ const withContent=MISSIONS.filter(m=>state.photos[m.id]||state.answers[m.id]||state.notes[m.id]||state.done[m.id]);
+ const surpriseEntries=(state.surprises||[]).filter(s=>s.finished);
+ const photos=Object.keys(state.photos||{}).length+Object.keys(state.surprisePhotos||{}).length;
+ const done=Object.keys(state.done||{}).length;
+ const status=document.getElementById('albumStatus');
+ if(status){
+   let approx=0;try{approx=new Blob([JSON.stringify(state)]).size/1024/1024}catch(e){}
+   status.innerHTML=`<h2>Album állapota</h2><div class="grid"><div class="stat"><span>Elmentett képek</span><b>${photos}</b></div><div class="stat"><span>Bejegyzések</span><b>${withContent.length+surpriseEntries.length}</b></div><div class="stat"><span>Teljesített</span><b>${done}</b></div><div class="stat"><span>Helyi mentés</span><b>${approx.toFixed(1)} MB</b></div></div><p class="small">A képek ezen a telefonon, a böngésző helyi tárhelyén vannak. A fő- és váratlan küldetések képei is itt jelennek meg. Biztonsági másolatként naponta használják a „Mentés exportálása” gombot.</p>`;
+ }
+ if(!withContent.length&&!surpriseEntries.length){
+   el.innerHTML='<div class="card">Még nincs albumbejegyzés. A válasz gépelése és a fénykép elkészítése közben automatikus helyi mentés történik.</div>';return;
+ }
+ const missionCards=withContent.map((m,i)=>`<div class="card album-item"><span class="pill">${m.area}</span><span class="pill">${state.done[m.id]?'✓ teljesítve':'piszkozat'}</span><h3>${i+1}. ${m.title}</h3>${state.photos[m.id]?`<img class="photo" src="${state.photos[m.id]}">`:'<p class="small">Még nincs fénykép.</p>'}<p><b>Fotófeladat:</b> ${playerVariant(m,'photo')}</p><p><b>Válasz:</b> ${escapeHtml(state.answers[m.id]||'—')}</p>${state.notes[m.id]?`<p><b>Emlék:</b> ${escapeHtml(state.notes[m.id])}</p>`:''}<button class="secondary" onclick="openMission('${m.id}')">Bejegyzés megnyitása</button></div>`).join('');
+ const surpriseCards=surpriseEntries.map(s=>`<div class="card album-item"><span class="pill">🔔 váratlan</span><span class="pill">${s.success?'✓ teljesítve':'nem sikerült'}</span><h3>${escapeHtml(s.title)}</h3>${state.surprisePhotos&&state.surprisePhotos[s.key]?`<img class="photo" src="${state.surprisePhotos[s.key]}">`:''}<p><b>Feladat:</b> ${escapeHtml(s.text)}</p>${s.note?`<p><b>Emlék:</b> ${escapeHtml(s.note)}</p>`:''}<p><b>Pont:</b> ${s.success?s.pts:0}</p></div>`).join('');
+ el.innerHTML=missionCards+surpriseCards;
+}
+function exportAlbum(){const items=MISSIONS.filter(m=>state.done[m.id]).map((m,i)=>`<section><h2>${i+1}. ${m.title}</h2><p><b>${m.area} – ${m.place}</b></p>${state.photos[m.id]?`<img src="${state.photos[m.id]}">`:''}<p><b>Fotóküldetés:</b> ${playerVariant(m,'photo')}</p><p><b>Válasz:</b> ${escapeHtml(state.answers[m.id]||'')}</p><p><b>Emlék:</b> ${escapeHtml(state.notes[m.id]||'')}</p></section>`).join('');const html=`<!doctype html><meta charset="utf-8"><title>Ausztria-kaland emlékalbum</title><style>body{font-family:Arial;max-width:900px;margin:40px auto;padding:20px;color:#1f2937}h1{font-size:42px}section{page-break-inside:avoid;border-top:2px solid #ddd;padding:25px 0}img{max-width:100%;max-height:650px;border-radius:14px}small{color:#666}</style><h1>Az elveszett korona</h1><p>Ausztria-kaland 2026 · ${escapeHtml(state.name)} · ${state.score} pont · ${state.crowns} megszerzett töredék · 8 szükséges</p>${items}<section><h2>Váratlan események</h2>${state.surprises.map(x=>`<article><h3>${escapeHtml(x.title)}</h3>${state.surprisePhotos&&state.surprisePhotos[x.key]?`<img src="${state.surprisePhotos[x.key]}">`:''}<p>${escapeHtml(x.text)}</p><p><b>Eredmény:</b> ${x.success?'sikerült':'nem sikerült'} · ${x.success?x.pts:0} pont</p>${x.note?`<p>${escapeHtml(x.note)}</p>`:''}</article>`).join('')}</section><p><small>Az albumot a családi kalandalkalmazás készítette.</small></p>`;downloadBlob(html,'ausztria-kaland-emlekalbum.html','text/html');}
 function exportSave(){downloadBlob(JSON.stringify(state,null,2),'ausztria-kaland-mentes.json','application/json');}
 function importSave(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();toast('Mentés betöltve','A játékállás és az album helyreállt.');}catch(err){toast('Hiba','A mentés nem olvasható.')}};r.readAsText(f);}
 function downloadBlob(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
